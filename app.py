@@ -8,6 +8,7 @@ import subprocess
 import json
 import idna
 from OpenSSL import crypto
+import os
 
 app = Flask(__name__)
 
@@ -161,4 +162,5 @@ def dnsdumpster():
     return jsonify({'note': 'Integrate with DNSDumpster scraping or API if available'})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
