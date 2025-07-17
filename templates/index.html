@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All-in-One Domain Troubleshooter</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>🌐 All-in-One Domain Troubleshooter</h1>
+    <textarea id="domains" placeholder="Enter one or more domains..."></textarea><br>
+    <button onclick="checkDomains()">Scan</button>
+    <button onclick="clearResults()">Clear</button>
+    <button onclick="exportCSV()">Download CSV</button>
+
+    <div id="results"></div>
+
+    <script>
+        let latestResults = [];
+
+        async function checkDomains() {
+            const input = document.getElementById('domains').value;
+            document.getElementById('results').innerHTML = "⏳ Scanning...";
+            const res = await fetch("/check", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domains: input })
+            });
+            const data = await res.json();
+            latestResults = data;
+            let html = "<h2>Results</h2><ul>";
+            for (let item of data) {
+                html += `<li><strong>${item.domain}</strong><br>
+                         A: ${item.dns.A.join(", ") || "None"}<br>
+                         CNAME: ${item.dns.CNAME.join(", ") || "None"}<br>
+                         MX: ${item.dns.MX.join(", ") || "None"}<br>
+                         TXT: ${item.dns.TXT.join(", ") || "None"}<br>
+                         Status: ${item.status}<br>
+                         ✉️ Email Provider: <b>${item.email_provider}</b><br>
+                         🧰 Services: ${item.services.join(", ") || "None"}</li><br>`;
+            }
+            html += "</ul>";
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function clearResults() {
+            document.getElementById('domains').value = "";
+            document.getElementById('results').innerHTML = "";
+            latestResults = [];
+        }
+
+        async function exportCSV() {
+            if (latestResults.length === 0) {
+                alert("No data to export.");
+                return;
+            }
+            const res = await fetch("/export", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: latestResults })
+            });
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "domain_scan_results.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
