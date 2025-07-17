@@ -1,2 +1,0 @@
-# Fortuxpert.domaintshoot
-Domain Troubleshooter

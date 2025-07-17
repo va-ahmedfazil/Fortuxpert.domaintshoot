@@ -1,70 +1,89 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>All-in-One Domain Troubleshooter</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8">
+  <title>Domain Troubleshooting Toolkit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f8f9fa;
+    }
+    .tool-card {
+      margin-bottom: 1.5rem;
+    }
+    .results {
+      white-space: pre-wrap;
+      background: #fff;
+      border: 1px solid #dee2e6;
+      padding: 1rem;
+      border-radius: .375rem;
+      margin-top: .5rem;
+    }
+  </style>
 </head>
 <body>
-    <h1>🌐 All-in-One Domain Troubleshooter</h1>
-    <textarea id="domains" placeholder="Enter one or more domains..."></textarea><br>
-    <button onclick="checkDomains()">Scan</button>
-    <button onclick="clearResults()">Clear</button>
-    <button onclick="exportCSV()">Download CSV</button>
+  <div class="container py-5">
+    <h1 class="mb-4 text-center">🔧 Domain Troubleshooting Toolkit</h1>
 
-    <div id="results"></div>
+    <div class="mb-4">
+      <input type="text" id="domain" class="form-control" placeholder="Enter domain (e.g. example.com)" />
+    </div>
 
-    <script>
-        let latestResults = [];
+    <div class="row">
+      <div class="col-md-4 tool-card" id="tools">
+        <!-- Tool buttons will be injected here -->
+      </div>
+      <div class="col-md-8">
+        <h5>Results</h5>
+        <div id="results" class="results">Select a tool and run the query to see results here.</div>
+      </div>
+    </div>
+  </div>
 
-        async function checkDomains() {
-            const input = document.getElementById('domains').value;
-            document.getElementById('results').innerHTML = "⏳ Scanning...";
-            const res = await fetch("/check", {
-                method: "POST",
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domains: input })
-            });
-            const data = await res.json();
-            latestResults = data;
-            let html = "<h2>Results</h2><ul>";
-            for (let item of data) {
-                html += `<li><strong>${item.domain}</strong><br>
-                         A: ${item.dns.A.join(", ") || "None"}<br>
-                         CNAME: ${item.dns.CNAME.join(", ") || "None"}<br>
-                         MX: ${item.dns.MX.join(", ") || "None"}<br>
-                         TXT: ${item.dns.TXT.join(", ") || "None"}<br>
-                         Status: ${item.status}<br>
-                         ✉️ Email Provider: <b>${item.email_provider}</b><br>
-                         🧰 Services: ${item.services.join(", ") || "None"}</li><br>`;
-            }
-            html += "</ul>";
-            document.getElementById('results').innerHTML = html;
-        }
+<script>
+  const tools = [
+    { label: 'WHOIS Lookup', route: 'whois' },
+    { label: 'DNS Records', route: 'dns' },
+    { label: 'Reverse IP Lookup', route: 'reverse-ip', useIP: true },
+    { label: 'SSL Certificate', route: 'ssl-cert' },
+    { label: 'Email Health (SPF/DKIM/DMARC)', route: 'email-health' },
+    { label: 'DNSSEC Validation', route: 'dnssec' },
+    { label: 'Blacklist Check', route: 'blacklist' },
+    { label: 'HTTP Headers', route: 'http-headers' },
+    { label: 'CDN/WAF Detection', route: 'cdn-fingerprint' },
+    { label: 'HSTS / HTTPS Check', route: 'hsts' },
+    { label: 'Zone Transfer', route: 'zone-transfer' },
+    { label: 'DNS Propagation', route: 'dns-propagation' },
+    { label: 'Domain Expiry', route: 'expired-domain' },
+    { label: 'DNSDumpster', route: 'dnsdumpster' }
+  ];
 
-        function clearResults() {
-            document.getElementById('domains').value = "";
-            document.getElementById('results').innerHTML = "";
-            latestResults = [];
-        }
+  const toolsContainer = document.getElementById('tools');
+  const resultsBox = document.getElementById('results');
 
-        async function exportCSV() {
-            if (latestResults.length === 0) {
-                alert("No data to export.");
-                return;
-            }
-            const res = await fetch("/export", {
-                method: "POST",
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: latestResults })
-            });
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = "domain_scan_results.csv";
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-    </script>
+  tools.forEach(tool => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-outline-primary w-100 mb-2';
+    btn.textContent = tool.label;
+    btn.onclick = async () => {
+      const domain = document.getElementById('domain').value.trim();
+      if (!domain) {
+        alert('Please enter a domain or IP');
+        return;
+      }
+      resultsBox.textContent = 'Loading...';
+      let url = `/${tool.route}?${tool.useIP ? 'ip' : 'domain'}=${domain}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        resultsBox.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        resultsBox.textContent = 'Error: ' + err;
+      }
+    };
+    toolsContainer.appendChild(btn);
+  });
+</script>
 </body>
 </html>

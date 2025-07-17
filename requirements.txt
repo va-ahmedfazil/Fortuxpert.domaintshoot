@@ -1,3 +1,7 @@
 Flask
 dnspython
+python-whois
 requests
+pyOpenSSL
+idna
+gunicorn
